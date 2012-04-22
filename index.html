@@ -46,8 +46,12 @@
 			var SCREEN_HEIGHT = window.innerHeight - 2 * MARGIN;
 			var FLOOR = -250;
 
-			var camera, controls, scene, renderer, color, materials = [];
+			var camera, controls, scene, renderer, projector, plane, color, materials = [];
 			var container, stats;
+
+			var mouse = new THREE.Vector2(),
+			offset = new THREE.Vector3(),
+			INTERSECTED, SELECTED;
 
 			var worldWidth = 32, worldDepth = 32,
 			worldHalfWidth = worldWidth / 2, worldHalfDepth = worldDepth / 2;
@@ -86,14 +90,14 @@
 
 				// SCENE CAMERA
 
-				camera = new THREE.PerspectiveCamera( 30, SCREEN_WIDTH / SCREEN_HEIGHT, NEAR, FAR );
+				camera = new THREE.PerspectiveCamera( 50, SCREEN_WIDTH / SCREEN_HEIGHT, NEAR, FAR );
 				camera.position.set( 5000, 1000, 3000 );
 				scene.add( camera );
 
 
 				// LIGHTS
 
-				var ambient = new THREE.AmbientLight( 0x555555 );
+				var ambient = new THREE.AmbientLight( 0x333333 );
 				scene.add( ambient );
 
 				light = new THREE.SpotLight( 0xF0F0F0 );
@@ -109,7 +113,7 @@
 				//light.shadowCameraVisible = true;
 
 				light.shadowBias = 0.0001;
-				light.shadowDarkness = 0.7;
+				light.shadowDarkness = 0.6;
 
 				light.shadowMapWidth = SHADOW_MAP_WIDTH;
 				light.shadowMapHeight = SHADOW_MAP_HEIGHT;
@@ -119,7 +123,14 @@
 				createScene();
 				initPostprocessing();
 
+				plane = new THREE.Mesh( new THREE.PlaneGeometry( 10000, 10000, 16, 16 ), new THREE.MeshBasicMaterial( { color: 0x000000, opacity: 0.25, transparent: true, wireframe: true } ) );
+				plane.geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
+				plane.visible = true;
+				scene.add( plane );
+
 				// RENDERER
+
+				projector = new THREE.Projector();
 
 				renderer = new THREE.WebGLRenderer( { clearColor: 0x000000, clearAlpha: 1, antialias: false } );
 				renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
@@ -154,15 +165,12 @@
 
 				// // TRACKBALL CONTROLS
 
-				controls = new THREE.TrackballControls( camera, renderer.domElement );
-
+				controls = new THREE.TrackballControls( camera );
 				controls.rotateSpeed = 1.0;
 				controls.zoomSpeed = 1.2;
 				controls.panSpeed = 0.8;
-
 				controls.noZoom = false;
 				controls.noPan = false;
-
 				controls.staticMoving = true;
 				controls.dynamicDampingFactor = 0.3;
 
@@ -182,7 +190,7 @@
 				window.addEventListener('keydown', function(ev) {
        				switch (ev.keyCode) {
         				case 'C'.charCodeAt(0): 
-          				addCube(camera.position); break;
+          				addSphere(camera.position); break;
       				}
     			}, false);
 
@@ -235,7 +243,111 @@
 				gui.addColor(effectController, 'terrain').onChange( matChanger );
 				gui.addColor(effectController, 'light').onChange( matChanger );
 
+				renderer.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				renderer.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
+				renderer.domElement.addEventListener( 'mouseup', onDocumentMouseUp, false );
+
+
 			}
+
+			function onDocumentMouseMove( event ) {
+
+				event.preventDefault();
+
+				mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+				mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+				//
+
+				var vector = new THREE.Vector3( mouse.x, mouse.y, 0.5 );
+				projector.unprojectVector( vector, camera );
+
+				var ray = new THREE.Ray( camera.position, vector.subSelf( camera.position ).normalize() );
+
+
+				if ( SELECTED ) {
+
+					var intersects = ray.intersectObject( plane );
+					SELECTED.position.copy( intersects[ 0 ].point.subSelf( offset ) );
+					return;
+
+				}
+
+
+				var intersects = ray.intersectObjects( objects );
+
+				if ( intersects.length > 0 ) {
+
+					if ( INTERSECTED != intersects[ 0 ].object ) {
+
+						if ( INTERSECTED ) INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
+
+						INTERSECTED = intersects[ 0 ].object;
+						INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
+
+						plane.position.copy( INTERSECTED.position );
+						plane.lookAt( camera.position );
+
+					}
+
+					container.style.cursor = 'pointer';
+
+				} else {
+
+					if ( INTERSECTED ) INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
+
+					INTERSECTED = null;
+
+					container.style.cursor = 'auto';
+
+				}
+
+			}
+
+			function onDocumentMouseDown( event ) {
+
+				event.preventDefault();
+
+				var vector = new THREE.Vector3( mouse.x, mouse.y, 0.5 );
+				projector.unprojectVector( vector, camera );
+
+				var ray = new THREE.Ray( camera.position, vector.subSelf( camera.position ).normalize() );
+
+				var intersects = ray.intersectObjects( objects );
+
+				if ( intersects.length > 0 ) {
+
+					controls.enabled = false;
+
+					SELECTED = intersects[ 0 ].object;
+
+					var intersects = ray.intersectObject( plane );
+					offset.copy( intersects[ 0 ].point ).subSelf( plane.position );
+
+					container.style.cursor = 'move';
+
+				}
+
+			}
+
+			function onDocumentMouseUp( event ) {
+
+				event.preventDefault();
+
+				controls.enabled = true;
+
+				if ( INTERSECTED ) {
+
+					plane.position.copy( INTERSECTED.position );
+
+					SELECTED = null;
+
+				}
+
+				container.style.cursor = 'auto';
+
+			}
+
 
 			function initPostprocessing () {
 
@@ -277,21 +389,15 @@
 
     		}
 
-			function addCube(pos){
+			function addSphere(pos){
 
-					var rand = Math.random()*0.5;
-					var randForm = Math.round((Math.random()));
-					if (randForm === 0){
-						var objGeo = new THREE.CylinderGeometry(0, 100, 150, 3, 1 );
-					}
-					if (randForm === 1){
-						var objGeo = new THREE.SphereGeometry(rand*100,rand*100,rand*100);
-					}
-					
-					
-					randColor = '0x'+Math.floor(Math.random()*16777215).toString(16);
-    				var objMat = new THREE.MeshPhongMaterial({color: randColor});
+					var objGeo = new THREE.SphereGeometry(100,100,100);
+					var objColor = '0x'+Math.floor(Math.random()*16777215).toString(16);
+    				var objMat = new THREE.MeshLambertMaterial({color: objColor});
     				var obj = new THREE.Mesh(objGeo, objMat);
+
+    				obj.castShadow = true;
+    				obj.receiveShadow  = false;
 
    					obj.geometry.dynamic = true;
    					// changes to the vertices
@@ -302,8 +408,11 @@
     				obj.position.set( pos.x, pos.y, pos.z );
     				obj.rotation.y = Math.PI/2;
 
-    				obj.castShadow = true;
-    				obj.receiveShadow  = false;
+    				obj.update = function(timeOffset) {
+
+    					//obj.position.y += Math.sin(Math.sin(timeOffset))*Math.random()*40;
+
+    				};
 
     				objects.push(obj);
     				scene.add(obj);
@@ -332,7 +441,7 @@
 				geometry.computeFaceNormals();
 				geometry.computeVertexNormals();
 
-				material = new THREE.MeshLambertMaterial( { color: 0xffffff } );
+				material = new THREE.MeshPhongMaterial( { color: 0xffffff } );
 
 				ground = new THREE.Mesh( geometry, material );
 				ground.rotation.y = - 90 * Math.PI / 180;
@@ -360,40 +469,38 @@
 				geometry.dynamic = true;
 
 
-				for ( i = 0; i < 100000; i ++ ) {
+				for ( i = 0; i < 50000; i ++ ) {
 
-					vector = new THREE.Vector3( Math.random() * 5000 - i/100, Math.random() * 5000 - i/100, Math.random() * 5000 - i/1000 );
+					vector = new THREE.Vector3( Math.random() * 5000 - i/100, Math.random() * 5000 - i/1000, Math.random() * 5000 - i/1000 );
 					vector.velocity = new THREE.Vector3(0,-Math.random(), 0); 
 					geometry.vertices.push(  vector  );
 
 				}
 
 				//parameters = [ [ [1.0, 1.0, 1.0], 5 ], [ [0.95, 1, 1], 4 ], [ [0.90, 1, 1], 3 ], [ [0.85, 1, 1], 2 ], [ [0.80, 1, 1], 1 ] ];
-				parameters = [ [ 0xff0000, 50 ], [ 0xff3300, 40 ], [ 0xff6600, 30 ], [ 0xff9900, 2 ], [ 0xffaa00, 10 ] ];
-				//parameters = [ [ 0xffffff, 5 ], [ 0xdddddd, 4 ], [ 0xaaaaaa, 3 ], [ 0x999999, 2 ], [ 0x777777, 1 ] ];
+				parameters = [ [ 0xff0000, 50 ], [ 0xff3300, 40 ], [ 0xff6600, 30 ], [ 0xff9900, 20 ], [ 0xffaa00, 10 ] ];
+				//parameters = [ [ 0xffffff, 25 ], [ 0xdddddd, 15 ], [ 0xaaaaaa, 10 ], [ 0x999999, 5 ], [ 0x777777, 3 ] ];
 
 				for ( i = 0; i < parameters.length; i ++ ) {
 
 					size  = parameters[i][1];
 					color = parameters[i][0];
 
-					//materials[i] = new THREE.ParticleBasicMaterial( { color: color, size: size } );
+					materials[i] = new THREE.ParticleBasicMaterial( { size: size} );
 
-					materials[i] = new THREE.ParticleBasicMaterial( { size: size } );
+					// materials[i] = new THREE.ParticleBasicMaterial( { size: size } );
 					materials[i].color.setHSV( color[0], color[1], color[2] );
 
 					particles = new THREE.ParticleSystem( geometry, materials[i] );
 
-					particles.rotation.x = Math.random() * 6;
-					particles.rotation.y = Math.random() * 6;
-					particles.rotation.z = Math.random() * 6;
-					//particles.position.set( 0,  0, FLOOR+500);
-
+					particles.rotation.x = Math.random() * 60;
+					particles.rotation.y = Math.random() * 60;
+					particles.rotation.z = Math.random() * 60;
 					
 
 				}
-				particles.receiveShadow = true;
-				particles.castShadow = true;
+				//particles.receiveShadow = true;
+				//particles.castShadow = true;
 
 				flows.push(particles);
 
@@ -455,51 +562,15 @@
 				// light.position.z	= Math.cos(piPerSeconds*0.05)*1200;
 
 				for ( var i = 0; i < objects.length; i ++ ){
-					// objects[i].position.x	+= Math.sin(piPerSeconds*Math.random()*0.5)*3;
-					objects[i].position.y += Math.sin(piPerSeconds*Math.random()*Math.sin(piPerSeconds))*4;
-					// objects[i].position.z	+= Math.cos(piPerSeconds*Math.random()*0.5)*3;
-					if ( i % 2 == 0){
-						objects[i].position.x += Math.cos(piPerSeconds*2)*10;
-    					//objects[i].scale.y = Math.random()*10;
-    					//objects[i].scale.z = Math.random()*10;
-					}
 
-					else{
-						objects[i].position.z += Math.cos(piPerSeconds*1)*10;
-    					//objects[i].scale.y = Math.random()*10;
-    					//objects[i].scale.z = Math.random()*10;
-					}
-				}
+					objects[i].update(piPerSeconds);
 				
-				for ( var i = 0, l = ground.geometry.vertices.length; i < l; i ++ ) {
-
-					var pos = ground.geometry.vertices[ i ].y;
-					ground.geometry.vertices[ i ].y = pos+100*Math.sin(i-time);
-
-					//particles.geometry.vertices[ i ].x += Math.sin(i-time/10);
-
-
 				}
 
-
-
+				//ground.rotation.y += 0.001;
 				ground.geometry.__dirtyVertices = true;
 
-				particles.rotation.z += 0.001;
-
-				for ( var i = 0, l = particles.geometry.vertices.length; i < l; i ++ ) {
-
-					var particle = particles.geometry.vertices[ i ];
-					if(particle.y < -2000) {
-      					particle.y = 2000;
-      					particle.velocity.y = 0;
-    				}
-					
-					particle.velocity.y -= Math.random() * 100;
-					particle.addSelf(particle.velocity);
-
-
-				}
+				particles.rotation.x += 0.001;
 
 				particles.geometry.__dirtyVertices = true;
 
