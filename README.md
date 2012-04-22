@@ -1,4 +1,4 @@
 kite-hunt
 =========
 
-A musical 3D discovery game
+A musical 3D discovery game written in JavaScript
