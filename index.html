@@ -290,6 +290,8 @@
 
 						INTERSECTED = intersects[ 0 ].object;
 						INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
+						//send object and camera to autofocus bokeh
+						autofocus(INTERSECTED.position, camera.position); 
 
 						plane.position.copy( INTERSECTED.position );
 						plane.lookAt( camera.position );
@@ -396,6 +398,16 @@
         		postprocessing.quad.rotation.x = Math.PI / 2;
         		postprocessing.scene.add( postprocessing.quad );
 
+    		}
+
+    		function autofocus(objPos, camPos){
+
+    			var distance = objPos.distanceTo(camPos);
+
+    			var focus = postprocessing.bokeh_uniforms[ "focus" ].value = distance / 1000 / Math.log(distance);
+    			var aperture = postprocessing.bokeh_uniforms[ "aperture" ].value = focus / distance * 100;
+
+    			console.log(focus, aperture);
     		}
 
 			function addSphere(pos){
@@ -563,7 +575,7 @@
 				var delta = clock.getDelta();
 				var time = clock.getElapsedTime() * 10;
 
-				var seconds		= Date.now()/1000
+				var seconds		= Date.now()/1000;
 				var piPerSeconds	= seconds * Math.PI;
 			
 				// light.position.x	= 1000+Math.sin(piPerSeconds*0.05)*2200;
