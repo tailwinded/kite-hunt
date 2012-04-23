@@ -59,7 +59,9 @@
 			offset = new THREE.Vector3(),
 			INTERSECTED, SELECTED;
 
-			var worldWidth = 32, worldDepth = 32,
+			var SHIFT = false, MOUSEDOWN = false, MOUSEDOWNx = 0;
+
+			var worldWidth = 128, worldDepth = 128,
 			worldHalfWidth = worldWidth / 2, worldHalfDepth = worldDepth / 2;
 
 			var NEAR = 5, FAR = 50000;
@@ -107,16 +109,14 @@
 				scene.add( ambient );
 
 				light = new THREE.SpotLight( 0xF0F0F0 );
-				light.position.set( -1000, 3000, 2500 );
-				light.target.position.set( 0, 0, 0 );
+				light.position.set( -1000, 3000, 8500 );
+				light.dynamic = true;
 
 				light.castShadow = true;
 
 				light.shadowCameraNear = 700;
 				light.shadowCameraFar = camera.far;
 				light.shadowCameraFov = 50;
-
-				//light.shadowCameraVisible = true;
 
 				light.shadowBias = 0.0001;
 				light.shadowDarkness = 0.6;
@@ -126,12 +126,13 @@
 
 				scene.add( light );
 
+
 				createScene();
 				initPostprocessing();
 
 				plane = new THREE.Mesh( new THREE.PlaneGeometry( 10000, 10000, 16, 16 ), new THREE.MeshBasicMaterial( { color: 0x000000, opacity: 0.25, transparent: true, wireframe: true } ) );
 				plane.geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
-				plane.visible = true;
+				plane.visible = false;
 				scene.add( plane );
 
 				// RENDERER
@@ -191,14 +192,7 @@
 				stats.domElement.style.zIndex = 100;
 				container.appendChild( stats.domElement );
 
-				//EXTRA CONTROLS
-
-				window.addEventListener('keydown', function(ev) {
-       				switch (ev.keyCode) {
-        				case 'C'.charCodeAt(0): 
-          				addSphere(camera.position); break;
-      				}
-    			}, false);
+				
 
     			//GUI
 
@@ -248,6 +242,32 @@
 				gui.add( effectController, "maxblur", 0.0, 3.0, 0.025 ).onChange( matChanger );
 				gui.addColor(effectController, 'terrain').onChange( matChanger );
 				gui.addColor(effectController, 'light').onChange( matChanger );
+				gui.close();
+
+
+				//EXTRA CONTROLS
+
+				renderer.domElement.addEventListener('keydown', function(ev) {
+       				switch (ev.keyCode) {
+        				case 'C'.charCodeAt(0): 
+          				addSphere(camera.position); break;
+      				}
+    			}, false);
+
+
+    			renderer.domElement.addEventListener('keydown', function(ev) {
+       				switch (ev.keyCode) {
+        				case 16: 
+          				SHIFT = true; break;
+      				}
+    			}, false);
+
+    			renderer.domElement.addEventListener('keyup', function(ev) {
+       				switch (ev.keyCode) {
+        				case 16: 
+          				SHIFT = false; break;
+      				}
+    			}, false);
 
 				renderer.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
 				renderer.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
@@ -290,15 +310,28 @@
 
 						INTERSECTED = intersects[ 0 ].object;
 						INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
-						//send object and camera to autofocus bokeh
-						autofocus(INTERSECTED.position, camera.position); 
-
 						plane.position.copy( INTERSECTED.position );
 						plane.lookAt( camera.position );
+						//send object and camera to autofocus bokeh
+						autofocus(INTERSECTED.position, camera.position); 
+						container.style.cursor = 'pointer';
 
 					}
 
-					container.style.cursor = 'pointer';
+					else if (SHIFT && MOUSEDOWN) {
+
+						controls.freeze = true;
+						var diff = Math.sin(MOUSEDOWNx - mouse.x);
+
+						INTERSECTED.scale.x += diff;
+						INTERSECTED.scale.y += diff;
+						INTERSECTED.scale.z += diff;
+						console.log(INTERSECTED.scale);
+						container.style.cursor = 'e-resize';
+						
+					}
+
+					
 
 				} else {
 
@@ -315,6 +348,8 @@
 			function onDocumentMouseDown( event ) {
 
 				event.preventDefault();
+				MOUSEDOWN = true;
+				MOUSEDOWNx = mouse.x;
 
 				var vector = new THREE.Vector3( mouse.x, mouse.y, 0.5 );
 				projector.unprojectVector( vector, camera );
@@ -323,29 +358,29 @@
 
 				var intersects = ray.intersectObjects( objects );
 
-				if ( intersects.length > 0 ) {
+				if ( intersects.length > 0 && !SHIFT ) {
 
-					controls.enabled = false;
+					controls.freeze = true;
 
 					SELECTED = intersects[ 0 ].object;
 
 					var intersects = ray.intersectObject( plane );
 					offset.copy( intersects[ 0 ].point ).subSelf( plane.position );
-
-					console.log(plane);
 					
 
 					container.style.cursor = 'move';
 
-				}
+				} 
+					
 
 			}
 
 			function onDocumentMouseUp( event ) {
 
 				event.preventDefault();
+				MOUSEDOWN = false;
 
-				controls.enabled = true;
+				controls.freeze = false;
 
 				if ( INTERSECTED ) {
 
@@ -404,17 +439,16 @@
 
     			var distance = objPos.distanceTo(camPos);
 
-    			var focus = postprocessing.bokeh_uniforms[ "focus" ].value = distance / 1000 / Math.log(distance);
+    			var focus = postprocessing.bokeh_uniforms[ "focus" ].value = distance / 4000 / Math.log(distance);
     			var aperture = postprocessing.bokeh_uniforms[ "aperture" ].value = focus / distance * 100;
 
-    			console.log(focus, aperture);
     		}
 
 			function addSphere(pos){
 
 					var objGeo = new THREE.SphereGeometry(100,100,100);
 					var objColor = '0x'+Math.floor(Math.random()*16777215).toString(16);
-    				var objMat = new THREE.MeshLambertMaterial({color: objColor});
+    				var objMat = new THREE.MeshPhongMaterial({color: objColor});
     				var obj = new THREE.Mesh(objGeo, objMat);
 
     				obj.castShadow = true;
@@ -444,7 +478,7 @@
 
 				// GROUND
 
-				geometry = new THREE.PlaneGeometry( 20000, 20000, worldWidth - 1, worldDepth - 1 );
+				geometry = new THREE.PlaneGeometry( 200000, 200000, worldWidth - 1, worldDepth - 1 );
 				geometry.dynamic = true;
 
 				var i, j, il, jl;
@@ -462,7 +496,7 @@
 				geometry.computeFaceNormals();
 				geometry.computeVertexNormals();
 
-				material = new THREE.MeshPhongMaterial( { color: 0xffffff } );
+				material = new THREE.MeshPhongMaterial( { color: 0xffffff, wireframe: false } );
 
 				ground = new THREE.Mesh( geometry, material );
 				ground.rotation.y = - 90 * Math.PI / 180;
@@ -571,6 +605,8 @@
 			}
 
 			function render() {
+
+				light.lookAt(camera.position);
 
 				var delta = clock.getDelta();
 				var time = clock.getElapsedTime() * 10;
