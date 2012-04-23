@@ -148,33 +148,33 @@
 
 				// FP CONTROLS
 
-				// controls = new THREE.FirstPersonControls( camera, renderer.domElement );
+				controls = new THREE.FirstPersonControls( camera, renderer.domElement );
 
-				// controls.lookSpeed = 0.01;
-				// controls.movementSpeed = 500;
-				// controls.noFly = false;
-				// controls.lookVertical = true;
-				// controls.heightCoef  = 0.5
-				// controls.constrainVertical = true;
-				// controls.verticalMin = 1.5;
-				// controls.verticalMax = 2.0;
-				// //controls.activeLook = false;
-				// //controls.freeze = true;
+				controls.lookSpeed = 0.01;
+				controls.movementSpeed = 500;
+				controls.noFly = false;
+				controls.lookVertical = true;
+				controls.heightCoef  = 0.5
+				controls.constrainVertical = true;
+				controls.verticalMin = 1.5;
+				controls.verticalMax = 2.0;
+				//controls.activeLook = false;
+				//controls.freeze = true;
 
-				// controls.lon = -110;
+				controls.lon = -110;
 
-				// // TRACKBALL CONTROLS
+				// // // TRACKBALL CONTROLS
 
-				controls = new THREE.TrackballControls( camera, renderer.domElement );
-				controls.rotateSpeed = 1.0;
-				controls.zoomSpeed = 1.2;
-				controls.panSpeed = 0.8;
-				controls.noZoom = false;
-				controls.noPan = false;
-				controls.staticMoving = true;
-				controls.dynamicDampingFactor = 0.3;
+				// controls = new THREE.TrackballControls( camera, renderer.domElement );
+				// controls.rotateSpeed = 1.0;
+				// controls.zoomSpeed = 1.2;
+				// controls.panSpeed = 0.8;
+				// controls.noZoom = false;
+				// controls.noPan = false;
+				// controls.staticMoving = true;
+				// controls.dynamicDampingFactor = 0.3;
 
-				controls.keys = [ 65, 83, 68 ];
+				// controls.keys = [ 65, 83, 68 ];
 
 
 				// STATS
@@ -323,6 +323,9 @@
 
 					var intersects = ray.intersectObject( plane );
 					offset.copy( intersects[ 0 ].point ).subSelf( plane.position );
+
+					console.log(plane);
+					
 
 					container.style.cursor = 'move';
 
