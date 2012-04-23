@@ -2,8 +2,17 @@
 <html lang="en">
 	<head>
 		<title>kite-hunt</title>
+
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+		<script src="js/lib/three/Three.js"></script>
+		<script src="js/lib/three/ShaderExtras.js"></script>
+		<script src="js/lib/dat-gui/dat.gui.min.js"></script>
+		<script src="js/lib/three/ImprovedNoise.js"></script>
+		<script src="js/lib/three/Detector.js"></script>
+		<script src="js/lib/stats/Stats.js"></script>
+
 		<style>
 			body {
 				font-family: Monospace;
@@ -12,6 +21,7 @@
 				margin: 0px;
 				overflow: hidden;
 			}
+
 			#info {
 				position: absolute;
 				top: 10px;
@@ -20,20 +30,16 @@
 				z-index: 100;
 				display:block;
 			}
-			#info a { color: #f00; font-weight: bold; text-decoration: underline; cursor: pointer }
+
+			#info a {
+				color: #f00;
+				font-weight: bold;
+				text-decoration: underline;
+				cursor: pointer;
+			}
 		</style>
 	</head>
-
 	<body>
-		
-
-		<script src="http://mrdoob.github.com/three.js/build/Three.js"></script>
-		<script src="js/lib/three/ShaderExtras.js"></script>
-		<script src="js/lib/dat-gui/dat.gui.min.js"></script>
-		<script src="js/lib/three/ImprovedNoise.js"></script>
-		<script src="js/lib/three/Detector.js"></script>
-		<script src="js/lib/stats/Stats.js"></script>
-
 		<script>
 
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
@@ -611,6 +617,5 @@
 			}
 
 		</script>
-
 	</body>
 </html>
