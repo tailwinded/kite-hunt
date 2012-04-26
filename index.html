@@ -12,6 +12,9 @@
 		<script src="js/lib/three/ImprovedNoise.js"></script>
 		<script src="js/lib/three/Detector.js"></script>
 		<script src="js/lib/stats/Stats.js"></script>
+		<script src="js/REZO/REZO.js"></script>
+		<script src="js/REZO/Scene.js"></script>
+		<script src="js/REZO/Buffer.js"></script>
 
 		<style>
 			body {
@@ -44,6 +47,8 @@
 
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
+			var container, stats;
+
 			var SHADOW_MAP_WIDTH = 2048, SHADOW_MAP_HEIGHT = 2048;
 
 			var MARGIN = 100;
@@ -52,31 +57,20 @@
 			var SCREEN_HEIGHT = window.innerHeight - 2 * MARGIN;
 			var FLOOR = -250;
 
-			var camera, controls, scene, renderer, projector, plane, color, materials = [];
-			var container, stats;
-
-			var mouse = new THREE.Vector2(),
-			offset = new THREE.Vector3(),
-			INTERSECTED, SELECTED;
-
-			var SHIFT = false, MOUSEDOWN = false, MOUSEDOWNx = 0;
-
-			var worldWidth = 128, worldDepth = 128,
-			worldHalfWidth = worldWidth / 2, worldHalfDepth = worldDepth / 2;
-
 			var NEAR = 5, FAR = 50000;
 
-			var sceneHUD, cameraOrtho, hudMaterial;
+			var worldWidth = 128, worldDepth = 128, worldHalfWidth = worldWidth / 2, worldHalfDepth = worldDepth / 2;
 
-			var morph, morphs = [];
+			var camera, controls, scene, renderer, light, projector, plane, color, materials = [];
+			var postprocessing = { enabled  : true };
+			var material_depth;
+
+			var mouse = new THREE.Vector2(), offset = new THREE.Vector3(), INTERSECTED, SELECTED, SHIFT = false, MOUSEDOWN = false, MOUSEDOWNx = 0;
 
 			var objects = [];
 			var flows = [];
 
-			var light;
-
-			var postprocessing = { enabled  : true };
-			var material_depth;
+			var audio;
 
 			var clock = new THREE.Clock();
 
@@ -96,10 +90,15 @@
 				scene.fog = new THREE.FogExp2( 0xBCD2EE, 0.0001 );
 				//THREE.ColorUtils.adjustHSV( scene.fog.color, 0.02, 0.15, -0.65 );
 
+				createScene();
+				initPostprocessing();
+
 				// SCENE CAMERA
 
-				camera = new THREE.PerspectiveCamera( 50, SCREEN_WIDTH / SCREEN_HEIGHT, NEAR, FAR );
+				camera = new THREE.PerspectiveCamera( 30, SCREEN_WIDTH / SCREEN_HEIGHT, NEAR, FAR );
 				camera.position.set( 5000, 1000, 3000 );
+				camera.useQuarternion = true;
+			
 				scene.add( camera );
 
 
@@ -126,10 +125,6 @@
 
 				scene.add( light );
 
-
-				createScene();
-				initPostprocessing();
-
 				plane = new THREE.Mesh( new THREE.PlaneGeometry( 10000, 10000, 16, 16 ), new THREE.MeshBasicMaterial( { color: 0x000000, opacity: 0.25, transparent: true, wireframe: true } ) );
 				plane.geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
 				plane.visible = false;
@@ -148,16 +143,15 @@
 				renderer.setClearColor( scene.fog.color, 1 );
 				renderer.autoClear = false;
 
-				//
-
 				renderer.shadowMapEnabled = true;
 				renderer.shadowMapSoft = true;
+				renderer.physicallyBasedShading = true;
 
 				// FP CONTROLS
 
 				controls = new THREE.FirstPersonControls( camera, renderer.domElement );
 
-				controls.lookSpeed = 0.01;
+				controls.lookSpeed = 0.05;
 				controls.movementSpeed = 500;
 				controls.noFly = false;
 				controls.lookVertical = true;
@@ -183,6 +177,9 @@
 
 				// controls.keys = [ 65, 83, 68 ];
 
+				// AUDIO
+
+				audio = new REZO.Scene(camera);
 
 				// STATS
 
@@ -275,6 +272,7 @@
 
 
 			}
+
 
 			function onDocumentMouseMove( event ) {
 
@@ -467,7 +465,12 @@
 
     					//obj.position.y += Math.sin(Math.sin(timeOffset))*Math.random()*40;
 
+
     				};
+
+    				obj.sound = new REZO.Buffer({ scene: audio, stream:'sound/Crackling.wav', loop : true }, obj);
+    				obj.sound.play();
+
 
     				objects.push(obj);
     				scene.add(obj);
@@ -606,7 +609,12 @@
 
 			function render() {
 
-				
+
+				audio.update(camera);
+
+				for (var i = 0, l = objects.length; i < l; i++){
+					objects[ i ].sound.update();
+				}
 
 				var delta = clock.getDelta();
 				var time = clock.getElapsedTime() * 10;
