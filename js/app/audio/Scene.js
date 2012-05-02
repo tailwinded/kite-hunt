@@ -22,6 +22,8 @@ Audio.Scene = function (camera) {
 
     this.environments = { enabled : false };
 
+    this.bufferList = {};
+
 };
 
 Audio.Scene.prototype.constructor = Audio.Scene;
@@ -52,18 +54,21 @@ Audio.Scene.prototype.update = function() {
 };
 
     			
-Audio.Scene.prototype.loadBuffer = function(file, callback) {
-    var ctx = this.context;
-    var request = new XMLHttpRequest();
-    request.open("GET", file, true);
-    request.responseType = "arraybuffer";
-    request.onload = function() {
-        var buffer = ctx.createBuffer(request.response, false);
-        callback(buffer);
-    };
-    request.send();
-    return request;
-};
+// Audio.Scene.prototype.loadBuffer = function(file, callback) {
+//     var ctx = this.context;
+//     var request = new XMLHttpRequest();
+//     request.open("GET", file, true);
+//     request.responseType = "arraybuffer";
+//     request.onload = function() {
+//         var buffer = ctx.createBuffer(request.response, false);
+//         callback(buffer);
+//     };
+//     request.send();
+//     return request;
+// };
+
+
+
 
 Audio.Scene.prototype.loadEnvironment = function(file) {
         var self = this;
@@ -71,6 +76,49 @@ Audio.Scene.prototype.loadEnvironment = function(file) {
             self.environments[name] = buffer;
         });
 };
+
+
+Audio.Scene.prototype.loadBuffer = function(url, callback) {
+  // Load buffer asynchronously
+  var request = new XMLHttpRequest();
+  var filename = url.replace(/^.*[\\\/]/, '');
+  request.open("GET", url, true);
+  request.responseType = "arraybuffer";
+
+  var scene = this;
+
+  request.onload = function() {
+    // Asynchronously decode the audio file data in request.response
+    scene.context.decodeAudioData(
+        request.response,
+        function(buffer) {
+            if (!buffer) {
+              alert('error decoding file data: ' + url);
+              return;
+            }
+            scene.bufferList[filename] = buffer;
+            callback('success');
+        }
+    );
+  }
+
+  request.onerror = function() {
+    alert('Audio.Loader: XHR error');
+  }
+
+  request.send();
+}
+
+Audio.Scene.prototype.loadBuffers = function(urlList, callback) {
+    var count = 0;
+    for (var i = 0; i < urlList.length; ++i)
+    this.loadBuffer(urlList[i], function(status){
+        if (status == 'success') ++count;
+        if (count == urlList.length) {
+            callback('success');
+        }
+    });
+}
 
     
 

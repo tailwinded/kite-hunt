@@ -16,6 +16,11 @@ function init() {
 
 	audio = new Audio.Scene();
 	audio.init(camera);
+	audio.loadBuffers(['sound/Crackling.wav', 'sound/sine_440.wav'], function(status){
+		if (status == 'success'){
+			//do something
+		}
+	});
 
 	// RENDERER
 
@@ -40,7 +45,7 @@ function init() {
 	controls.noFly = false;
 	controls.lookVertical = true;
 	controls.heightCoef  = 0.5
-	controls.constrainVertical = true;
+	controls.constrainVertical = false;
 	controls.verticalMin = 1.5;
 	controls.verticalMax = 2.0;
 	controls.lon = -110;
@@ -118,7 +123,7 @@ function init() {
 	renderer.domElement.addEventListener('keydown', function(ev) {
 			switch (ev.keyCode) {
 			case 'C'.charCodeAt(0): 
-				var obj = new Sphere(100, camera.position, new Audio.Buffer({scene:audio, stream:'sound/dub1.wav', loop: true}) ); 
+				var obj = new Sphere(100, camera.position, new Audio.Buffer({scene:audio, stream:'sine_440.wav', loop: true}) ); 
 				scene.add(obj);
 				objects.push(obj);
 				console.log(obj.sound);
@@ -426,9 +431,13 @@ function onDocumentMouseDown( event ) {
 		controls.freeze = true;
 
 		SELECTED = intersects[ 0 ].object;
-		if (typeof SELECTED.sound.play !== 'undefined'){
+
+		if (typeof SELECTED.sound !== 'undefined'){
+			if (typeof SELECTED.sound.play !== 'undefined'){
 			SELECTED.sound.play();
+			}
 		}
+		
 		var intersects = ray.intersectObject( plane );
 		offset.copy( intersects[ 0 ].point ).subSelf( plane.position );
 		container.style.cursor = 'move';

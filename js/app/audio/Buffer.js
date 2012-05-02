@@ -5,7 +5,6 @@
 Audio.Buffer = function (parameters) {
 
 	THREE.Object3D.call( this );
-	this.initParams = parameters;
 
 	this.scene = parameters.scene;	
 	this.directionalSource = false;
@@ -20,14 +19,17 @@ Audio.Buffer = function (parameters) {
 	this.panner.connect(this.scene.context.destination);
 
 	this.source = this.scene.context.createBufferSource(mixToMono = false);
+	this.source.buffer = this.scene.bufferList[parameters.stream];
 	this.source.connect(this.volume);
 	this.source.loop = parameters.loop;
+
+	this.sampleRate = this.scene.context.sampleRate;
 	
 	this.oldPosition = new THREE.Vector3();
 	this.posDelta = new THREE.Vector3();
 	this.posFront = new THREE.Vector3();
 	this.posUp = new THREE.Vector3();
-	
+
 	return this;
 
 };
@@ -54,16 +56,21 @@ Audio.Buffer.prototype.update = function() {
 	}
 
 	this.source.playbackRate.value = 1/this.parent.scale.x;
-	this.volume.gain.value = 0.5 * (Math.exp(this.parent.scale.x));
+	//this.volume.gain.value = 0.1 * (Math.exp(this.parent.scale.x));
+
+	
 
 };
 
 Audio.Buffer.prototype.play = function () {
-	var self = this;
-	this.scene.loadBuffer(this.initParams.stream, function(buffer){
-		self.source.buffer = buffer;		     
-	});
+	
 	this.source.noteOn(0);
+
+};
+
+Audio.Buffer.prototype.oscillate = function () {
+	
+
 
 };
 
