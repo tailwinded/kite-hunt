@@ -2,4 +2,4 @@
  * @author eleventigers / http://jokubasdargis.com/
  */
 
-var REZO = REZO || { REVISION: '1' };
+var Audio = Audio || { REVISION: '1' };
