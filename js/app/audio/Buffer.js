@@ -86,7 +86,7 @@ Audio.Buffer.prototype.update = function() {
 Audio.Buffer.prototype.play = function () {
 	
 
-	// if (!this.playing){
+	if (!this.playing){
 		this.playing = true;
 		this.volume.gain.value = 1;
 		this.source = this.scene.context.createBufferSource(mixToMono = true);
@@ -99,7 +99,7 @@ Audio.Buffer.prototype.play = function () {
 		setTimeout(function() { self.stop(); }, 1000);
 		this.intervalId = setInterval(function() { if(self.volume.gain.value >= 0) self.volume.gain.value -= 0.01;  }, 1);
 			
-	// }
+	}
 };
 
 Audio.Buffer.prototype.stop = function () {
