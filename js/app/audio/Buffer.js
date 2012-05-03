@@ -97,7 +97,7 @@ Audio.Buffer.prototype.play = function () {
 	
 		var self = this;
 		setTimeout(function() { self.stop(); }, 1000);
-		this.intervalId = setInterval(function() { if(self.volume.gain.value >= 0) self.volume.gain.value *= 0.95;  }, 1);
+		this.intervalId = setInterval(function() { if(self.volume.gain.value >= 0) self.volume.gain.value -= 0.01;  }, 1);
 			
 	// }
 };
