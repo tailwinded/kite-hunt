@@ -16,7 +16,7 @@ function init() {
 
 	audio = new Audio.Scene();
 	audio.init(camera);
-	audio.loadBuffers(['sound/Crackling.wav', 'sound/sine_440.wav'], function(status){
+	audio.loadBuffers(['sound/Crackling.wav', 'sound/sine_440.wav', 'sound/square_440.wav', 'sound/saw_440.wav' ], function(status){
 		if (status == 'success'){
 			//do something
 		}
@@ -32,7 +32,7 @@ function init() {
 	renderer.autoClear = false;
 	renderer.shadowMapEnabled = true;
 	renderer.shadowMapSoft = true;
-	renderer.physicallyBasedShading = true;
+	renderer.physicallyBasedShading = false;
 	renderer.domElement.style.position = "relative";
 	renderer.domElement.style.top = MARGIN + 'px';
 	container.appendChild( renderer.domElement );
@@ -120,23 +120,29 @@ function init() {
 
 	//EXTRA CONTROLS
 
-	renderer.domElement.addEventListener('keydown', function(ev) {
-			switch (ev.keyCode) {
-			case 'C'.charCodeAt(0): 
-				var obj = new Sphere(100, camera.position, new Audio.Buffer({scene:audio, stream:'sine_440.wav', loop: true}) ); 
-				scene.add(obj);
-				objects.push(obj);
-				console.log(obj.sound);
-
-				break;
-			}
-	}, false);
-
+	
 
 	renderer.domElement.addEventListener('keydown', function(ev) {
 			switch (ev.keyCode) {
-			case 16: 
-				SHIFT = true; break;
+				case 16: 
+					SHIFT = true; break;
+
+				case '1'.charCodeAt(0): 
+					var obj = new Sphere(100, camera.position, new Audio.Buffer({scene:audio, stream:'sine_440.wav', loop: true}) ); 
+					scene.add(obj);
+					objects.push(obj);
+					break;
+				
+				case '2'.charCodeAt(0): 
+					var obj = new Cube(100, camera.position, new Audio.Buffer({scene:audio, stream:'square_440.wav', loop: true}) ); 
+					scene.add(obj);
+					objects.push(obj);
+					break;
+				case '3'.charCodeAt(0): 
+					var obj = new Pyramid(100, camera.position, new Audio.Buffer({scene:audio, stream:'saw_440.wav', loop: true}) ); 
+					scene.add(obj);
+					objects.push(obj);
+					break;	
 			}
 	}, false);
 
@@ -287,6 +293,7 @@ function setupScene( ) {
 
 	mesh.castShadow = true;
 	mesh.receiveShadow = true;
+	console.log(mesh);
 
 	scene.add( mesh );
 
@@ -319,7 +326,7 @@ function initPostprocessing () {
 	postprocessing.scene.add(postprocessing.camera);
 
 	var pars = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat };
-	postprocessing.rtTextureDepth = new THREE.WebGLRenderTarget( window.innerWidth, height, pars );
+	postprocessing.rtTextureDepth = new THREE.WebGLRenderTarget( window.innerWidth, height*2, pars );
 	postprocessing.rtTextureColor = new THREE.WebGLRenderTarget( window.innerWidth, height*2, pars );
 
 	var bokeh_shader = THREE.ShaderExtras[ "bokeh" ];
@@ -380,6 +387,11 @@ function onDocumentMouseMove( event ) {
 			if ( INTERSECTED ) INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
 
 			INTERSECTED = intersects[ 0 ].object;
+			if (typeof INTERSECTED.sound !== 'undefined'){
+				if (typeof INTERSECTED.sound.play !== 'undefined'){
+					INTERSECTED.sound.play();
+				}
+			}
 			INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
 			plane.position.copy( INTERSECTED.position );
 			plane.lookAt( camera.position );
@@ -431,12 +443,6 @@ function onDocumentMouseDown( event ) {
 		controls.freeze = true;
 
 		SELECTED = intersects[ 0 ].object;
-
-		if (typeof SELECTED.sound !== 'undefined'){
-			if (typeof SELECTED.sound.play !== 'undefined'){
-			SELECTED.sound.play();
-			}
-		}
 		
 		var intersects = ray.intersectObject( plane );
 		offset.copy( intersects[ 0 ].point ).subSelf( plane.position );

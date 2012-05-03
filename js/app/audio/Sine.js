@@ -93,8 +93,8 @@ Audio.Sine.prototype.update = function() {
 
 Audio.Sine.prototype.process = function(e) {
   // Get a reference to the output buffer and fill it up.
-  var right = e.outputBuffer.getChannelData(0),
-      left = e.outputBuffer.getChannelData(1);
+  var left = e.outputBuffer.getChannelData(0),
+      right = e.outputBuffer.getChannelData(1);
 
   // We need to be careful about filling up the entire buffer and not
   // overflowing.
