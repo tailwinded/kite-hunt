@@ -20,6 +20,8 @@ Audio.Buffer = function (parameters) {
 	this.volume.connect(this.panner);
 	this.panner.connect(this.scene.context.destination);
 
+	this.adsr = new Audio.ADSR(0, 10, 5, 1, 100, this.volume);
+
 	// this.adsr = this.scene.context.createJavaScriptNode(2048, 2, 2);
 	// this.adsr.connect(this.volume);
 
