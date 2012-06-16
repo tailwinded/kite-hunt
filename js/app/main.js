@@ -16,7 +16,12 @@ function init() {
 
 	audio = new Audio.Scene();
 	audio.init(camera);
-	audio.loadBuffers(['sound/Crackling.wav', 'sound/sine_440.wav', 'sound/square_440.wav', 'sound/saw_440.wav' ], function(status){
+	// audio.loadBuffers(['sound/mix1.wav', 'sound/sine_440.wav', 'sound/square_440.wav', 'sound/saw_440.wav' ], function(status){
+	// 	if (status == 'success'){
+	// 		//do something
+	// 	}
+	// });
+	audio.loadFreesoundBuffers(['39557', '2523'], function(status){
 		if (status == 'success'){
 			//do something
 		}
@@ -128,13 +133,13 @@ function init() {
 					SHIFT = true; break;
 
 				case '1'.charCodeAt(0): 
-					var obj = new Sphere(100, camera.position, new Audio.Buffer({scene:audio, stream:'sine_440.wav', loop: true}) ); 
+					var obj = new Sphere(100, camera.position, new Audio.Buffer({scene:audio, stream:'39557', loop: false}) ); 
 					scene.add(obj);
 					objects.push(obj);
 					break;
 				
 				case '2'.charCodeAt(0): 
-					var obj = new Cube(100, camera.position, new Audio.Buffer({scene:audio, stream:'square_440.wav', loop: true}) ); 
+					var obj = new Cube(100, camera.position, new Audio.Buffer({scene:audio, stream:'2523', loop: false}) ); 
 					scene.add(obj);
 					objects.push(obj);
 					break;
@@ -157,6 +162,10 @@ function init() {
 	renderer.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
 	renderer.domElement.addEventListener( 'mouseup', onDocumentMouseUp, false );
 
+
+}
+
+function soundAnalysisData(sound) {
 
 }
 

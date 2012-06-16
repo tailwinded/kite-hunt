@@ -29,7 +29,7 @@ Cube.prototype.constructor = Cube;
 
 Cube.prototype.update = function(){
 
-	for (var i = 0; i < this.children.length; i++){
-		this.children[ i ].update();
-	}
+	// for (var i = 0; i < this.children.length; i++){
+	// 	this.children[ i ].update();
+	// }
 } 

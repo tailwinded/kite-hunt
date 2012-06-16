@@ -379,6 +379,21 @@ FS.Sound.prototype.getAnalysis = function(showAll, filter, succesCallback, error
         );
 }
 
+FS.Sound.prototype.getAnalysisFrames = function(succesCallback, errorCallback){
+
+        
+        var uri = this.properties.analysis_frames;
+        
+        //create request
+        FS.RequestCreator.createGetReq(
+                uri, 
+                function(analysis){ 
+                        succesCallback(analysis)
+                }, errorCallback
+        );
+
+}
+
 FS.Sound.prototype.getSimilarSounds = function(num_results, preset, succesCallback, errorCallback){     
         FS.SoundCollection.getSimilarSoundsFromSound(this.properties['id'], num_results, preset, succesCallback, errorCallback)
 }

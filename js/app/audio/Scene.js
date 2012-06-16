@@ -109,12 +109,69 @@ Audio.Scene.prototype.loadBuffer = function(url, callback) {
   request.send();
 }
 
+Audio.Scene.prototype.loadFreesoundBuffer = function(id, callback) {
+  // Load buffer asynchronously
+  var url, filename, returnedSndInfo;
+  var request = new XMLHttpRequest();
+
+  freesound.getSound(id, function(sound){
+    returnedSndInfo = sound;
+    url = sound.properties['preview-hq-mp3'];
+    filename = id;//url.replace(/^.*[\\\/]/, '');
+
+    request.open("GET", url, true);
+    request.responseType = "arraybuffer";
+    request.send();
+    }, 
+    function(){console.log("Error fetching freesound resource: "+id);
+    });
+ 
+
+
+  var scene = this;
+
+  request.onload = function() {
+    // Asynchronously decode the audio file data in request.response
+    scene.context.decodeAudioData(
+        request.response,
+        function(buffer) {
+            if (!buffer) {
+              alert('error decoding file data: ' + url);
+              return;
+            }
+            buffer.meta = returnedSndInfo;
+            returnedSndInfo.getAnalysisFrames(function(analysis){buffer.meta.properties.analysis_frames = analysis}, function(){});
+            scene.bufferList[filename] = buffer;
+            console.log(scene.bufferList);
+            callback('success');
+        }
+    );
+  }
+
+  request.onerror = function() {
+    alert('Audio.Loader: XHR error');
+  }
+
+  
+}
+
 Audio.Scene.prototype.loadBuffers = function(urlList, callback) {
     var count = 0;
     for (var i = 0; i < urlList.length; ++i)
     this.loadBuffer(urlList[i], function(status){
         if (status == 'success') ++count;
         if (count == urlList.length) {
+            callback('success');
+        }
+    });
+}
+
+Audio.Scene.prototype.loadFreesoundBuffers = function(idList, callback) {
+    var count = 0;
+    for (var i = 0; i < idList.length; ++i)
+    this.loadFreesoundBuffer(idList[i], function(status){
+        if (status == 'success') ++count;
+        if (count == idList.length) {
             callback('success');
         }
     });

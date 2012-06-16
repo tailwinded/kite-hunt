@@ -13,7 +13,19 @@
  	this.gateOn = false;
  	this.onComplete = onComplete;
 
+
+
  };
 
  Audio.ADSR.prototype.constructor = Audio.ADSR;
+
+ Audio.ADSR.prototype.gateOn = function(){
+ 	this.gate = 1;
+ 	this.parameter.setValueAtTime(0, 0);
+ }
+
+ Audio.ADSR.prototype.gateOff = function(){
+ 	this.gate = 0;
+ }
+
 

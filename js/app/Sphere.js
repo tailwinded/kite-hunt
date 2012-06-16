@@ -20,6 +20,10 @@ Sphere = function (radius, position, soundObject) {
 	this.add(sound);
 	this.sound = soundObject;
 
+	this.nearbyOld = [];
+	this.nearbyNew = [];
+
+
 }
 
 Sphere.prototype = new THREE.Mesh();
@@ -27,7 +31,9 @@ Sphere.prototype.constructor = Sphere;
 
 Sphere.prototype.update = function(){
 
-	for (var i = 0; i < this.children.length; i++){
-		this.children[ i ].update();
-	}
+	// for (var i = 0; i < this.children.length; i++){
+	// 	this.children[ i ].update();
+	// }
+	
 } 
+
