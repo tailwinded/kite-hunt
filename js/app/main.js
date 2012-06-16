@@ -21,7 +21,7 @@ function init() {
 	// 		//do something
 	// 	}
 	// });
-	audio.loadFreesoundBuffers(['39557', '2523'], function(status){
+	audio.loadFreesoundBuffers(['39557', '2523', '659'], function(status){
 		if (status == 'success'){
 			//do something
 		}
@@ -144,7 +144,7 @@ function init() {
 					objects.push(obj);
 					break;
 				case '3'.charCodeAt(0): 
-					var obj = new Pyramid(100, camera.position, new Audio.Buffer({scene:audio, stream:'saw_440.wav', loop: true}) ); 
+					var obj = new Pyramid(100, camera.position, new Audio.Buffer({scene:audio, stream:'659', loop: true}) ); 
 					scene.add(obj);
 					objects.push(obj);
 					break;	

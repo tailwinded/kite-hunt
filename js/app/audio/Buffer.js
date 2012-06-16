@@ -46,7 +46,12 @@ Audio.Buffer = function (parameters) {
 	this.nearby = [];
 
 	this.sink = function(topic, data){
-		
+
+		var topicElements = topic.split('.');
+		var descriptor = topicElements[1];
+		if (descriptor == 'spectral_centroid'){
+			self.map(descriptor, data);
+		}		
 	}
 
 	return this;
@@ -56,6 +61,55 @@ Audio.Buffer = function (parameters) {
 Audio.Buffer.prototype = new THREE.Object3D();
 Audio.Buffer.prototype.constructor = Audio.Buffer; 
 
+Audio.Buffer.prototype.map = function(filter, targetData){
+
+	var distancesMap = {};
+	var closest = {};
+	var timings = {};
+	var maxDistance = 1;
+
+	if (this.voices.length > 0){
+		var pathToLowLevel = this.voices[0].source.buffer.meta.properties.analysis_frames.lowlevel;
+		var buffer = this.voices[0].source.buffer;
+	}
+	if (this.voices.length == 0){
+		var pathToLowLevel =  this.scene.bufferList[this.initParams.stream].meta.properties.analysis_frames.lowlevel;
+		var buffer = this.scene.bufferList[this.initParams.stream];
+	}
+		
+	var sourceData = pathToLowLevel[filter];
+	var distances = sourceData.map(calcDistance);
+
+	for (var i = 0; i < sourceData.length; i++){
+	
+		distancesMap[i] = distances[i];
+	}
+
+	for (var i in distancesMap){
+		if (distancesMap[i] < maxDistance && distancesMap[i] >= 0){
+			closest[i] = distancesMap[i];
+		}
+	}
+
+	var windowSize = buffer.duration * buffer.sampleRate / sourceData.length;
+
+	for (var i in closest){
+		var frame = parseInt(i, 10);
+		timings[i] = (frame * windowSize) / buffer.sampleRate;
+	}
+	
+	for (var i in timings){
+		this.play(undefined, timings[i], 1);
+	}
+
+	function calcDistance(x){
+
+		return x - targetData;
+	}
+			
+
+
+}
 
 Audio.Buffer.prototype.posUpdate = function() {
 
@@ -225,7 +279,7 @@ function Voice (parent, buffer) {
 	this.play = function (smpSt, smpDur) {
 
 		this.sampleStart = (!smpSt) ? 0 : smpSt;
-		this.sampleDuration = (!smpDur || sampDur == 0) ? this.source.buffer.duration : smpDur;
+		this.sampleDuration = (!smpDur || smpDur == 0) ? this.source.buffer.duration : smpDur;
 
 		this.playHead = this.parent.scene.context.createJavaScriptNode(2048, 1, 1);
 		this.playHead.onaudioprocess = function(e) {self.follow(); self.info()};
@@ -272,10 +326,6 @@ function Voice (parent, buffer) {
 		}
 		
 	}		
-}
-
-function Sink (topic, data){
-	console.log(topic, data);
 }
 
 
